@@ -315,7 +315,7 @@ for site in websites:  # Read through each website
             product_features(soup, brand, sku)
 
             #  pause script every run just because.
-            sleepy = random.randint(5, 10)
+            sleepy = random.randint(10, 15)
             print "Sleep for: {} seconds".format(sleepy)
             time.sleep(sleepy)
             run +=1
