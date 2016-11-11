@@ -6,20 +6,34 @@ import csv
 import os
 import random
 import time
+import sys
 
 
 def download_image(url, name):
-    path = "C:/Users/aland/Desktop/webscrapper"
+    '''
+    This function physically downloads the product image to the folder specified by path variable.
+    :param url: Image url
+    :param name: Name to save image as
+    :return:
+    '''
+    path = ""  # Path example : C:/Users/~name~/Desktop/Some_Folder
+    if path == "":
+        print "No file path specified in download_image() function"
+        sys.exit()
     fullfilename = os.path.join(path, name)
-    #urllib.urlretrieve(url, fullfilename)
-    #name = path + name
     image = urllib.URLopener()
     image.retrieve(url, fullfilename)
 
 
 def get_image_url(soup):
+    '''
+    Function finds and cleans up the direct image url and creates a name for the image based from the products title.
+    The function then passes the url and name to the function download_image()
+    :param soup: A beautiful soup object containing the html section with the image source
+    :return:
+    '''
     image = soup.findAll('img', {"src": True})
-    prImage = ''
+    prImage = ''  # Url of the image
 
     for i in image:
         s = str(i['src'])
@@ -35,7 +49,14 @@ def get_image_url(soup):
 
     download_image(prImage, imagetitle)
 
+
 def product_sku(soup):
+    '''
+    Function to return the products sku number.  If the element can't be found, an exception is raised and the sku number
+    is randomly generated
+    :param soup: A beautiful soup object containing the html section with the products sku data
+    :return: returns an int value of the products sku number
+    '''
     sku = ' '
     checksku = soup.find("span", class_="item-number")
     try:
@@ -47,6 +68,10 @@ def product_sku(soup):
 
 
 def product_price():
+    '''
+    Function to randomly generate a product price.
+    :return: returns a float value of the product's randomly generated price
+    '''
     price = random.uniform(50.0, 2000.00)
     price = float("{0:.2f}".format(price))  # Round to 2 decimal places
 
@@ -54,6 +79,11 @@ def product_price():
 
 
 def product_specs(soup):
+    '''
+    Function gets all product "specifications" creates a string out of them and then converts that string into a list
+    :param soup: A beautiful soup object containing the html section with product specifications section
+    :return: A list object of strings
+    '''
     productSpecs = soup.findAll("div", class_="product-info-specs")
     specs=''
     for ps in productSpecs:
@@ -62,6 +92,14 @@ def product_specs(soup):
 
 
 def product_features(soup, brand, sku):
+    '''
+    Function processes the product descriptions and then appends the value to the list p_i, which is then appended to the
+    list product_info as a list of lists
+    :param soup: A beautiful soup object containing the html section with the product description
+    :param brand: a string object of the products brand name
+    :param sku: an int value of the products sku number
+    :return:
+    '''
     ls = soup.findAll("ul", class_="pdp-features")
 
     feature_ls = []
@@ -72,7 +110,7 @@ def product_features(soup, brand, sku):
             l = ''
             try:
                 l = str(letter)
-            except:
+            except:  # When unable to convert unicode value to string value
                 print "Letter in description not convertible"
                 l = ''
                 pass
@@ -88,15 +126,21 @@ def product_features(soup, brand, sku):
         #print "feature_list: {}".format(feature_ls)
     features = ".  ".join(feature_ls)
 
-    p_i.append(product_id)  # ID
+    p_i.append(product_id)
     p_i.append(title)
     p_i.append(features)
     p_i.append(brand)
-    p_i.append(random.choice(['brian.jones', 'alan.duncan', 'amir.shahinpour', 'victor.shahbazian', 'bereket.haile']))
+    p_i.append(random.choice(['jack.jones', 'alan.thompson', 'tom.johnson', 'victor.nyugen', 'michael.haile']))
     p_i.append(sku)
     product_info.append(p_i)
 
 def consolidate_product_data(specs):
+    '''
+    Function processes the list object specs and parses that data to append to the list data which is then appended to the
+    list all_data as a list of lists.  To better understand what's going on print the variable specs
+    :param specs: a list object containing all the product features
+    :return: a string object of the products brand name.  Needed for function product_features
+    '''
     size = ''
     length = ''
     width = ''
@@ -165,16 +209,24 @@ def consolidate_product_data(specs):
     return brand
 
 def gen_hex_color_code(): # Generate a random hex code since costco doesnt give me one.
+    '''
+    Function to generate a random hex color code for products
+    :return: return the randomly generated hex color code
+    '''
     return ''.join([random.choice('0123456789ABCDEF') for x in range(6)])
 
 
 ################################################### Costco WebScraper #################################################
 
 
-file_data = 'websites.txt'
+file_data = 'websites.txt'  # .txt file must have each website on its own new line
 websites = open(file_data, 'r')
 all_data = []
 product_info = []
+
+# Single test site
+#websites = ["Enter a costco product website here"]
+
 
 data_titles = ['product_info_id', 'title', 'price', 'color', 'color_code', 'color_group', 'size_name', 'size_order',
                'length', 'width', 'height', 'unit', 'weight']
@@ -183,8 +235,7 @@ all_data.append(data_titles)
 product_info.append(product_titles)
 run = 1
 
-# Single test site
-#websites = ["http://www.costco.com/Bighorn-Ultimate-Access-Gun-Safe-Model-UAB7144EX-.product.100285126.html"]
+
 total = 0
 product_id = 10
 for site in websites:  # Read through each website
@@ -199,9 +250,9 @@ for site in websites:  # Read through each website
     soup = BeautifulSoup(page, 'html.parser')
     data = []
     p_i = []
-    #  Product title
     title = ' '
 
+    # Member only items can not be read generically like public items.  If one is encountered skip it.
     memberOnly = soup.find('p', class_="member-only")
     not_member = True
     if memberOnly is not None:
@@ -222,12 +273,12 @@ for site in websites:  # Read through each website
                 let = ''
                 try:
                     let = str(letter)
-                except:
+                except:  # When unable to convert unicode value to string value
                     print "letter in title not convertible"
                     let = ''
                     pass
                 title += let
-            if title is None:
+            if title is None:  # If title can't be parsed properly, skip gathering rest of data
                 productTrue = False
                 break
             # try:
@@ -240,35 +291,37 @@ for site in websites:  # Read through each website
             title = title.translate(None, '></\\":?*|')
             break
         if productTrue:
-            ##########################################################
+
             # Product sku
             sku = product_sku(soup)
-            ############################################################
+
             # Product Price  //// Costco price element wont fetch, returns empty '--'
             price = product_price()
-            ###########################################################
-            # Get initial product image from page then use google image scrapper using product model
-            # try:
-            #     get_image_url(soup)
-            # except:
-            #     print "Failed to get image"
-            #     continue
-            ##########################################################
+
+            # Get initial product image from page
+            try:
+                get_image_url(soup)
+            except:
+                print "Failed to get image"
+                continue
+
             # Get product specs
             specs = product_specs(soup)
             #print specs
             # print specs # Printing specs gives you the product specifications as a complete list.  Use to see how to iterate through data
             brand = consolidate_product_data(specs)
-            #################################################################
+
             # Get product features/description
             product_features(soup, brand, sku)
 
+            #  pause script every run just because.
             sleepy = random.randint(5, 10)
             print "Sleep for: {} seconds".format(sleepy)
             time.sleep(sleepy)
             run +=1
             print "Continue, processed runs: {}".format(run)
 
+# Convert list objects all_data and product_info into 2 individual csv files
 with open("product.csv", "wb") as f:
     writer = csv.writer(f)
     writer.writerows(all_data)
